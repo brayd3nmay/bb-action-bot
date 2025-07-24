@@ -56,3 +56,33 @@ async function fetchActionItems() {
         throw new Error(`Failed to fetch past due action item(s): ${error.message}`);
     }
 }
+
+async function aggregateActionItemsByInitiative(actionItems) {
+    let initiatives = new Map(); // Map<string, PastDueItem[]> - stores action items grouped by initiative ID
+
+    for (let item of actionItems) {
+        let initiativePageIds = item.properties['Assigned Initiative(s)'].relation.map( initiativePage => initiativePage.id);
+        let itemTitle = item.properties['Action Item'].title.map(itemTitle => itemTitle.plain_text).join('');
+        let status = item.properties['Status'].status.name;
+        let dueDate = item.properties['Due Date'].date.start;
+        let url = item.url;
+
+        const newItem = {
+            actionItem: itemTitle,
+            status: status,
+            dueDate: dueDate,
+            url: url,
+        };
+
+        for (const id of initiativePageIds) {
+            if (initiatives.has(id)) {
+                initiatives.get(id).push(newItem);
+            }
+            else {
+                initiatives.set(id, [newItem]);
+            }
+        }
+    }
+
+    return initiatives;
+}
