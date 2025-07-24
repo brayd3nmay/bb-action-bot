@@ -3,7 +3,8 @@ require('dotenv').config();
 const { Client } = require('@notionhq/client');
 const notion = new Client({ auth: process.env.NOTION_KEY });
 
-async function getAllPageIds() {
+// Get the page ids for the action items that have been assigned and are past due
+async function getIds() {
     let pageIds = [];
     let hasMore = true;
     let startCursor = undefined;
