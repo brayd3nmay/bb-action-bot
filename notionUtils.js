@@ -20,7 +20,7 @@ async function getIds() {
                         {
                             'property': 'Due Date',
                             'date': {
-                                'before': new Date().toISOString()
+                                'before': new Date().toISOString().split('T')[0]
                             }
                         },
                         {
@@ -42,12 +42,20 @@ async function getIds() {
                                     'status': {
                                         'equals': 'Delegated'
                                     }
+                                },
+                                {
+                                    'property': 'Status',
+                                    'status': {
+                                        'equals': 'In Progress'
+                                    }
                                 }
                             ]
                         }
                     ]
                 },
             });
+
+            console.dir(response, { depth: null });
             
             for(const page of response.results) {
                 const id = page.id;
