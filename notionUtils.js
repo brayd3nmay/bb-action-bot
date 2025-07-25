@@ -117,3 +117,9 @@ async function enrichInitiatives(initiativesMap) {
 
     return enriched;
 }
+
+module.exports = {
+    fetchActionItems,
+    aggregateActionItemsByInitiative,
+    enrichInitiatives
+};
