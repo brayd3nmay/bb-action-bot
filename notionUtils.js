@@ -111,7 +111,7 @@ async function enrichInitiatives(initiativesMap) {
         enriched.push({
             initiative: title,
             leads: leads,
-            items, items,
+            items: items,
         });
     }
 
