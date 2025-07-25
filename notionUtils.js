@@ -86,3 +86,34 @@ async function aggregateActionItemsByInitiative(actionItems) {
 
     return initiatives;
 }
+
+async function enrichInitiatives(initiativesMap) {
+    const enriched = []
+
+    for(const [initiativeId, items] of initiativesMap.entries()) {
+        items.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+
+        const page = await notion.pages.retrieve({ page_id: initiativeId });
+
+        const title = page.properties['Initiative'].title.map(initiativeTitle => initiativeTitle.plain_text).join('');
+
+        let leads = []
+        const leadPagesIds = page.properties['Lead'].relation.map(lead => lead.id);
+        for (let leadPageId of leadPagesIds) {
+            const leadPage = await notion.pages.retrieve({ page_id: leadPageId });
+            
+            const lead = leadPage.properties.Name.title.map(leadTitle => leadTitle.plain_text).join('');
+            const leadEmail = leadPage.properties.Email.email;
+
+            leads.push({name: lead, email: leadEmail });
+        }
+        
+        enriched.push({
+            initiative: title,
+            leads: leads,
+            items, items,
+        });
+    }
+
+    return enriched;
+}
