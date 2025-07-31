@@ -26,8 +26,6 @@ async function sendEmails(initiatives) {
     for (let initiative of initiatives) {
         for (let lead of initiative.leads) {
             const { name, email } = lead;
-
-            const htmlBody = createEmail(lead.name, initiative);
             
             (async () => {
                 const info = await transporter.sendMail({
@@ -35,6 +33,7 @@ async function sendEmails(initiatives) {
                     to: lead.email,
                     cc: process.env.NODEMAILER_CC,
                     subject: 'Late Action Items',
+                    text: textBody,
                     html: htmlBody,
                 });
 
@@ -42,4 +41,29 @@ async function sendEmails(initiatives) {
             })();
         }
     }
+}
+
+function getTodaysDate() {
+    let date = new Date();
+
+    const options = {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    };
+
+    date = date.toLocaleDateString('en-US', options);
+    return date;
+}
+
+function calculateDaysOverdue(dueDate) {
+    const startOfToday = new Date();
+    const startOfDueDate = new Date(dueDate);
+
+    startOfToday.setHours(0, 0, 0, 0);
+    startOfDueDate.setHours(0, 0, 0, 0);
+
+    const difference = Math.floor((startOfToday - startOfDueDate) / 86400000); // 86_400_000 milliseconds in a day
+    return Math.max(0, difference);
 }
