@@ -103,7 +103,7 @@ async function enrichInitiatives(initiativesMap) {
             const leadPage = await notion.pages.retrieve({ page_id: leadPageId });
             
             const lead = leadPage.properties.Name.title.map(leadTitle => leadTitle.plain_text).join('');
-            const leadEmail = leadPage.properties.Email.email;
+            const leadEmail = leadPage.properties['School Email'].email;
 
             leads.push({name: lead, email: leadEmail });
         }
