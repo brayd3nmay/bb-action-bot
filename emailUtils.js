@@ -24,13 +24,19 @@ async function verifyTransporter() {
 
 async function sendEmails(initiatives) {
     for (let initiative of initiatives) {
+        const initiativeName = initiative.initiative;
+        const items = initiative.items;
+
         for (let lead of initiative.leads) {
-            const { name, email } = lead;
+            const leadFullName = lead.name;
+            const leadEmail = lead.email;
+
+            const textBody = createText(initiativeName, leadFullName, items);
             
-            (async () => {
+            /*(async () => {
                 const info = await transporter.sendMail({
                     from: `"Business Builders Bot" <${process.env.NODEMAILER_EMAIL}>`,
-                    to: lead.email,
+                    to: email,
                     cc: process.env.NODEMAILER_CC,
                     subject: 'Late Action Items',
                     text: textBody,
@@ -38,14 +44,12 @@ async function sendEmails(initiatives) {
                 });
 
                 console.log("Message sent:", info.messageId);
-            })();
+            })(); */
         }
     }
 }
 
-function getTodaysDate() {
-    let date = new Date();
-
+function formatDate(date) {
     const options = {
         weekday: 'long',
         year: 'numeric',
@@ -53,8 +57,8 @@ function getTodaysDate() {
         day: 'numeric'
     };
 
-    date = date.toLocaleDateString('en-US', options);
-    return date;
+    const dateObj = date instanceof Date ? date : new Date(date);
+    return dateObj.toLocaleDateString('en-US', options);
 }
 
 function calculateDaysOverdue(dueDate) {
@@ -67,3 +71,40 @@ function calculateDaysOverdue(dueDate) {
     const difference = Math.floor((startOfToday - startOfDueDate) / 86400000); // 86_400_000 milliseconds in a day
     return Math.max(0, difference);
 }
+
+function createText(initiative, fullName, pastDueItems) {
+    const firstName = fullName.split(" ")[0]; // assuming the first name is well formatted on notion with a 'firstName lastName'
+    const itemCount = pastDueItems.length;
+
+    let emailText = `Hi ${firstName},
+
+You and the ${initiative} team have ${itemCount} past due action item${itemCount > 1 ? 's' : ''} that need your attention:
+`;
+
+    pastDueItems.forEach((item) => {
+        const daysPastDue = calculateDaysOverdue(item.dueDate);
+
+        emailText += `
+${item.actionItem}
+Status: ${item.status}
+Due Date: ${formatDate(item.dueDate)} (${daysPastDue} day${daysPastDue > 1 ? 's' : ''} overdue)
+View in Notion: ${item.url}
+`;
+    });
+
+    emailText += `
+Please take action on these items as soon as possible.
+    
+If you need assistance or want to discuss timeline adjustments, don't hesitate to reach out.
+    
+Best regards,
+Business Builders Bot
+    
+This is an automated message. Please do not reply to this email.`;
+
+    return emailText;
+}
+
+module.exports = {
+    sendEmails
+};
