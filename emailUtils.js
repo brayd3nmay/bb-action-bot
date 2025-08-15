@@ -1,30 +1,9 @@
-require('dotenv').config();
+import 'dotenv/config';
+import { Resend } from 'resend';
 
-const nodemailer = require ('nodemailer');
-
-const transporter = nodemailer.createTransport({
-  host: process.env.NODEMAILER_HOST,
-  port: 465,
-  secure: true,
-  auth: {
-    user: process.env.NODEMAILER_EMAIL,
-    pass: process.env.NODEMAILER_PASSWORD,
-  },
-});
-
-async function verifyTransporter() {
-    try {
-        await transporter.verify();
-        console.log('Transporter is ready to send emails');
-    } catch (error) {
-        console.error(`Transporter verification failed: ${error}`);
-        throw error;
-    }
-}
+const resend = new Resend(process.env.RESEND_KEY);
 
 async function sendEmails(initiatives) {
-    await verifyTransporter();
-
     for (let initiative of initiatives) {
         const initiativeName = initiative.initiative;
         const items = initiative.items;
@@ -37,10 +16,10 @@ async function sendEmails(initiatives) {
             const htmlBody = createHtml(initiativeName, leadFullName, items);
             
             try {
-                const info = await transporter.sendMail({
-                    from: `"Business Builders Bot" <${process.env.NODEMAILER_EMAIL}>`,
-                    to: leadEmail,
-                    cc: process.env.NODEMAILER_CC,
+                const info = await resend.emails.send({
+                    from: 'Business Builders Bot <bot@bbosu.org>',
+                    to: 'may.822@osu.edu',//leadEmail,
+                    cc: ['may.822@osu.edu', 'perera.82@osu.edu'],
                     subject: 'Late Action Items',
                     text: textBody,
                     html: htmlBody,
@@ -226,6 +205,15 @@ function createHtml(initiative, fullName, pastDueItems) {
                     <tr>
                         <td style="padding: 40px;">
                             
+                            <!-- Business Builders Logo -->
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 32px;">
+                                <tr>
+                                    <td align="center">
+                                        <img src="https://github.com/brayd3nmay/notion-email/blob/b89ff878cb0b085503501c90125f95b5b345cca7/assets/business-builders-logo.png?raw=true" alt="Business Builders Logo" style="width: 100%; height: auto; display: block; border-radius: 8px;">
+                                    </td>
+                                </tr>
+                            </table>
+                            
                             <!-- Warning Alert Box -->
                             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; margin-bottom: 32px;">
                                 <tr>
@@ -298,6 +286,4 @@ function createHtml(initiative, fullName, pastDueItems) {
     `.trim();
 }
 
-module.exports = {
-    sendEmails
-};
+export { sendEmails };
