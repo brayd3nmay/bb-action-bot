@@ -25,9 +25,15 @@ async function sendEmails(initiatives) {
                     html: htmlBody,
                 });
 
-                console.log("Message sent:", info.messageId);
+                console.log("Message sent:", info);
+
+                // wait 500ms so we don't hit resend rate limit
+                await new Promise(resolve => setTimeout(resolve, 500));
             } catch (error) {
                 console.error(`Failed to send email to ${leadEmail}`, error);
+
+                // wait 500ms so we don't hit resend rate limit
+                await new Promise(resolve => setTimeout(resolve, 500));
             }
         }
     }
