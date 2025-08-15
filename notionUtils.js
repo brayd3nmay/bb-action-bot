@@ -1,6 +1,5 @@
-require('dotenv').config();
-
-const { Client } = require('@notionhq/client');
+import 'dotenv/config';
+import { Client } from '@notionhq/client';
 const notion = new Client({ auth: process.env.NOTION_KEY });
 
 // Get the page ids for the action items that have been assigned and are past due
@@ -118,7 +117,7 @@ async function enrichInitiatives(initiativesMap) {
     return enriched;
 }
 
-module.exports = {
+export {
     fetchActionItems,
     aggregateActionItemsByInitiative,
     enrichInitiatives
