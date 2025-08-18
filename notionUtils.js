@@ -2,8 +2,7 @@ import 'dotenv/config';
 import { Client } from '@notionhq/client';
 const notion = new Client({ auth: process.env.NOTION_KEY });
 
-// Get the page ids for the action items that have been assigned and are past due
-async function fetchActionItems() {
+async function queryPastDueActionItems(debug) {
     let pastDueActionItems = [];
     let hasMore = true;
     let startCursor = undefined;
@@ -38,6 +37,13 @@ async function fetchActionItems() {
             pastDueActionItems.push(...response.results);
             console.log(`Fetched batch of ${response.results.length} past-due action items. Total so far: ${pastDueActionItems.length}`);
 
+            if(debug) {
+                console.log('\nqueryActionItems database query response:');
+                console.dir(response, { depth: null, colors: true });
+                console.log('\npastDueActionItems: ');
+                console.dir(pastDueActionItems, { depth: null, colors: true });
+            }
+
             hasMore = response.has_more;
             if (hasMore) {
                 startCursor = response.next_cursor;
@@ -56,7 +62,7 @@ async function fetchActionItems() {
     }
 }
 
-async function aggregateActionItemsByInitiative(actionItems) {
+async function aggregateActionItemsByInitiative(actionItems, debug) {
     let initiatives = new Map(); // Map<string, PastDueItem[]> - stores action items grouped by initiative ID
 
     for (let item of actionItems) {
@@ -83,10 +89,15 @@ async function aggregateActionItemsByInitiative(actionItems) {
         }
     }
 
+    if (debug) {
+        console.log('\ninitiatives (Map<string, PastDueItem[]>:');
+        console.dir(initiatives, { depth: null, colors: true });
+    }
+
     return initiatives;
 }
 
-async function enrichInitiatives(initiativesMap) {
+async function enrichInitiatives(initiativesMap, debug) {
     const enriched = []
 
     for(const [initiativeId, items] of initiativesMap.entries()) {
@@ -114,11 +125,16 @@ async function enrichInitiatives(initiativesMap) {
         });
     }
 
+    if (debug) {
+        console.log('\n enriched: ');
+        console.dir(enriched, { depth: null, colors: true });
+    }
+
     return enriched;
 }
 
 export {
-    fetchActionItems,
+    queryActionItems,
     aggregateActionItemsByInitiative,
     enrichInitiatives
 };
