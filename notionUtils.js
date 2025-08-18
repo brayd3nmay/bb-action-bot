@@ -62,6 +62,50 @@ async function queryPastDueActionItems(debug) {
     }
 }
 
+async function queryActionItems(filter, description, debug) {
+    let actionItems = [];
+    let hasMore = true;
+    let startCursor = undefined;
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' });
+
+    try {
+        const databaseId = process.env.NOTION_DATABASE_ID;
+
+        while(hasMore) {
+            const response = await notion.databases.query({
+                database_id: databaseId,
+                start_cursor: startCursor,
+                filter: filter,
+            });
+            
+            actionItems.push(...response.results);
+            console.log(`Fetched batch of ${response.results.length} ${description} action items. Total so far: ${actionItems.length}`);
+
+            if(debug) {
+                console.log('\nqueryActionItems database query response:');
+                console.dir(response, { depth: null, colors: true });
+                console.log('\nactionItems: ');
+                console.dir(actionItems, { depth: null, colors: true });
+            }
+
+            hasMore = response.has_more;
+            if (hasMore) {
+                startCursor = response.next_cursor;
+                console.log(`There are more ${description} action items to fetch.`);
+                console.log(`Next start cursor is ${startCursor}`);
+            }
+            else {
+                console.log(`There are no more ${description} action items to fetch.`);
+            }
+        }
+
+        return actionItems;
+    } catch (error) {
+        console.error(`\nERROR with status ${error.status} fetching ${description} action items:\n\n${error.message}`, error);
+        throw new Error(`Failed to fetch ${description} action item(s): ${error.message}`);
+    }
+}
+
 async function aggregateActionItemsByInitiative(actionItems, debug) {
     let initiatives = new Map(); // Map<string, PastDueItem[]> - stores action items grouped by initiative ID
 
