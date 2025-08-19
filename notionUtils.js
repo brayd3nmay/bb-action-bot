@@ -18,12 +18,12 @@ async function queryActionItems(filter, description, debug) {
             });
             
             actionItems.push(...response.results);
-            console.log(`Fetched batch of ${response.results.length} ${description} action items. Total so far: ${actionItems.length}`);
+            console.log(`Fetched batch of ${response.results.length} ${description} action items.\nTotal so far: ${actionItems.length}`);
 
             if(debug) {
-                console.log(`\nqueryActionItems database ${description} query response:`);
+                console.log(`Action Item database query response for ${description} items:`);
                 console.dir(response, { depth: null, colors: true });
-                console.log('\nactionItems: ');
+                console.log(`\n${description} action item array: `);
                 console.dir(actionItems, { depth: null, colors: true });
             }
 
@@ -35,6 +35,7 @@ async function queryActionItems(filter, description, debug) {
             }
             else {
                 console.log(`There are no more ${description} action items to fetch.`);
+                console.log('-------------------------------------------------------');
             }
         }
 
