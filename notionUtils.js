@@ -64,8 +64,6 @@ async function updatePastDueStatus(items) {
 
             updatedItems.push(response);
 
-            //debug
-            console.dir(response, { depth: null });
         } catch(error) {
             console.error(`\nERROR with status ${error.status} updating page ${pageId}\n\n${error.message}`, error);
             throw new Error(`Failed to update ${pageId} ${error.message}`);
