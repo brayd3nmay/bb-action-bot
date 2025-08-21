@@ -124,8 +124,14 @@ async function queryPastDue() {
 
 async function queryAssigned() {
     const filter = { 'property': 'Status', 'status': { 'equals': 'Assigned'} };
+    const sort = [
+        {
+            'property': 'Due Date',
+            'direction': 'ascending'
+        }
+    ];
 
-    return await queryActionItems(filter, 'assigned');
+    return await queryActionItems(filter, sort, 'assigned');
 }
 
 async function aggregateByInitiative(pastDue, assigned) {
