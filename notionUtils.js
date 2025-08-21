@@ -76,26 +76,8 @@ async function updatePastDueStatus(items) {
 async function queryPastDue() {
     let items = [];
 
-    let filter = {
-        'property': 'Status', 
-        'status': { 
-            'equals': 'Past Due' 
-        }
-    };
-
-    const sort = [
-        {
-            'property': 'Due Date',
-            'direction': 'ascending'
-        }
-    ];
-
-    // Get the action items that are labeled as past due
-    const pastDue = await queryActionItems(filter, sort, 'past due status');
-    items.push(...pastDue);
-
     const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' });
-    filter = {
+    let filter = {
         'and': [
             {
                 'property': 'Due Date',
@@ -111,13 +93,29 @@ async function queryPastDue() {
         ]
     };
 
-    const pastDueWrongStatus =  await queryActionItems(filter, sort, 'assigned, delegated, or in progress status and past due date');
+    const pastDueWrongStatus =  await queryActionItems(filter, [], 'assigned, delegated, or in progress status and past due date');
     
     // update status to be past due
     if(pastDueWrongStatus.length > 0) {     
-        const updated = await updatePastDueStatus(pastDueWrongStatus);
-        items.push(...updated);
+        await updatePastDueStatus(pastDueWrongStatus);
     }
+
+    filter = {
+        'property': 'Status', 
+        'status': { 
+            'equals': 'Past Due' 
+        }
+    };
+
+    const sort = [
+        {
+            'property': 'Due Date',
+            'direction': 'ascending'
+        }
+    ];
+
+    const pastDue = await queryActionItems(filter, sort, 'past due status');
+    items.push(...pastDue);
 
     return items;
 }
