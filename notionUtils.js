@@ -135,31 +135,53 @@ async function queryAssigned() {
 async function aggregateByInitiative(pastDue, assigned) {
     let initiatives = new Map(); // Map<string, [pastDueItems[], assignedItems[]]>`
     
-    for (let item of pastDue) {
-        let initiativePageIds = item.properties['Assigned Initiative(s)'].relation.map( initiativePage => initiativePage.id);
-        let itemTitle = item.properties['Action Item'].title.map(itemTitle => itemTitle.plain_text).join('');
-        let status = item.properties['Status'].status.name;
-        let dueDate = item.properties['Due Date'].date.start;
+    const pushItem = (bucket, item) => {
+        let pageId = item.id;
+        
+        let relations = [];
+        if(item.properties && item.properties['Assigned Initiative(s)']) {
+            relations = item.properties['Assigned Initiative(s)'].relation.map( initiativePage => initiativePage.id);
+        }
+        if(relations.length === 0) {
+            relations = ['UNASSIGNED'];
+        }
+        
+        let itemTitle = '';
+        if(item.properties && item.properties['Action Item']){
+            itemTitle = item.properties['Action Item'].title.map(itemTitle => itemTitle.plain_text).join('');
+        }
+
+        let status = 'undefined';
+        if(item.properties && item.properties['Status'] && item.properties['Status'].status.name) {
+            status = item.properties['Status'].status.name;
+        }
+
+
+        let dueDate = 'None';
+        if(item.properties && item.properties['Due Date'] && item.properties['Due Date'].date){
+            dueDate = item.properties['Due Date'].date.start;
+        }
+
         let url = item.url;
 
         const newItem = {
+            pageId: pageId,
             actionItem: itemTitle,
             status: status,
             dueDate: dueDate,
             url: url,
         };
 
-        for (const id of initiativePageIds) {
-            if (initiatives.has(id)) {
-                initiatives.get(id).push(newItem);
+        for (const id of relations) {
+            if (!initiatives.has(id)) {
+                initiatives.set(id, { pastDue: [], assigned: []});
             }
-            else {
-                initiatives.set(id, [newItem]);
-            }
+            initiatives.get(id)[bucket].push(newItem);
         }
-    }
-
-    console.dir(initiatives, { depth: null, colors: true });
+    };
+    
+    for(let item of pastDue) pushItem('pastDue', item);
+    for(let item of assigned) pushItem('assigned', item);
 
     return initiatives;
 }
