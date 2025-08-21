@@ -186,28 +186,51 @@ async function aggregateByInitiative(pastDue, assigned) {
     return initiatives;
 }
 
-async function enrichInitiatives(initiativesMap) {
+async function retrieveInitiativeInfo(initiativesMap) {
     const enriched = []
 
     for(const [initiativeId, items] of initiativesMap.entries()) {
-        items.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+        if (initiativeId === 'UNASSIGNED') {
+            enriched.push({
+                id: initiativeId,
+                initiative: 'Unassigned',
+                leads: [],
+                items
+            });
+
+            continue;
+        }
 
         const page = await notion.pages.retrieve({ page_id: initiativeId });
 
-        const title = page.properties['Initiative'].title.map(initiativeTitle => initiativeTitle.plain_text).join('');
+        let title = 'undefined';
+        if(page.properties?.['Initiative']?.title) {
+            title = page.properties['Initiative'].title.map(initiativeTitle => initiativeTitle.plain_text).join('');
+        }
 
         let leads = []
+        if(page.properties?.['Lead']?.relation) {
         const leadPagesIds = page.properties['Lead'].relation.map(lead => lead.id);
+
         for (let leadPageId of leadPagesIds) {
             const leadPage = await notion.pages.retrieve({ page_id: leadPageId });
             
-            const lead = leadPage.properties.Name.title.map(leadTitle => leadTitle.plain_text).join('');
-            const leadEmail = leadPage.properties['School Email'].email;
+                let lead = 'undefined';
+                if(leadPage.properties?.Name?.title) {
+                    lead = leadPage.properties.Name.title.map(leadTitle => leadTitle.plain_text).join('');
+                }
+                
+                let leadEmail = 'undefined';
+                if(leadPage.properties?.['School Email']?.email) {
+                    leadEmail = leadPage.properties['School Email'].email;
+                }
 
-            leads.push({name: lead, email: leadEmail });
+                leads.push({id: leadPageId, name: lead, email: leadEmail });
+            }
         }
         
         enriched.push({
+            id: initiativeId,
             initiative: title,
             leads: leads,
             items: items,
@@ -221,5 +244,5 @@ export {
     queryPastDue,
     queryAssigned,
     aggregateByInitiative,
-    enrichInitiatives
+    retrieveInitiativeInfo
 };
