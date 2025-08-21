@@ -73,8 +73,6 @@ async function updatePastDueStatus(items) {
     return updatedItems;
 }
 
-let pastDue = await queryPastDue();
-
 async function queryPastDue() {
     let items = [];
 
