@@ -134,7 +134,7 @@ async function queryAssigned() {
 
 async function aggregateByInitiative(pastDue, assigned) {
     let initiatives = new Map(); // Map<string, [pastDueItems[], assignedItems[]]>`
-    
+
     const pushItem = (bucket, item) => {
         let pageId = item.id;
         
@@ -210,11 +210,11 @@ async function retrieveInitiativeInfo(initiativesMap) {
 
         let leads = []
         if(page.properties?.['Lead']?.relation) {
-        const leadPagesIds = page.properties['Lead'].relation.map(lead => lead.id);
+            const leadPagesIds = page.properties['Lead'].relation.map(lead => lead.id);
 
-        for (let leadPageId of leadPagesIds) {
-            const leadPage = await notion.pages.retrieve({ page_id: leadPageId });
-            
+            for (let leadPageId of leadPagesIds) {
+                const leadPage = await notion.pages.retrieve({ page_id: leadPageId });
+                
                 let lead = 'undefined';
                 if(leadPage.properties?.Name?.title) {
                     lead = leadPage.properties.Name.title.map(leadTitle => leadTitle.plain_text).join('');
