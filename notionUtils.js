@@ -2,7 +2,7 @@ import 'dotenv/config';
 import { Client } from '@notionhq/client';
 const notion = new Client({ auth: process.env.NOTION_KEY });
 
-async function queryActionItems(filter, description, debug) {
+async function queryActionItems(filter, sort, description) {
     let actionItems = [];
     let hasMore = true;
     let startCursor = undefined;
@@ -15,17 +15,11 @@ async function queryActionItems(filter, description, debug) {
                 database_id: databaseId,
                 start_cursor: startCursor,
                 filter: filter,
+                sorts: sort 
             });
             
             actionItems.push(...response.results);
             console.log(`Fetched batch of ${response.results.length} ${description} action items.\nTotal so far: ${actionItems.length}`);
-
-            if(debug) {
-                console.log(`Action Item database query response for ${description} items:`);
-                console.dir(response, { depth: null, colors: true });
-                console.log(`\n${description} action item array: `);
-                console.dir(actionItems, { depth: null, colors: true });
-            }
 
             hasMore = response.has_more;
             if (hasMore) {
@@ -46,41 +40,102 @@ async function queryActionItems(filter, description, debug) {
     }
 }
 
-async function queryPastDue(debug) {
-    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' });
+async function updatePastDueStatus(items) {
+    let updatedItems = [];
 
-    const filter = {
-            'and': [
-                {
-                    'property': 'Due Date',
-                    'date': { 'before': today }
-                },
-                {
-                    'or': [
-                        { 'property': 'Status', 'status': { 'equals': 'Assigned' } },
-                        { 'property': 'Status', 'status': { 'equals': 'Past Due' } },
-                        { 'property': 'Status', 'status': { 'equals': 'Delegated' } },
-                        { 'property': 'Status', 'status': { 'equals': 'In Progress' } }
-                    ]
+    for (let item of items) {
+        const pageId = item.id;
+
+        try {
+            console.log(`Updating page ${pageId}`);
+
+            const response = await notion.pages.update({
+                page_id: pageId,
+                properties: {
+                    'Status': {
+                        status: {
+                            name: 'Past Due'
+                        }
+                    }
                 }
-            ]
-        };
+            });
 
-    return await queryActionItems(filter, 'past due', debug);
+            console.log(`Updated page ${pageId}`);
+
+            updatedItems.push(response);
+
+            //debug
+            console.dir(response, { depth: null });
+        } catch(error) {
+            console.error(`\nERROR with status ${error.status} updating page ${pageId}\n\n${error.message}`, error);
+            throw new Error(`Failed to update ${pageId} ${error.message}`);
+        }
+    }
+
+    return updatedItems;
 }
 
-async function queryAssigned(debug) {
-    const filter = {
-        'property': 'Status', 'status': { 'equals': 'Assigned'}
+let pastDue = await queryPastDue();
+
+async function queryPastDue() {
+    let items = [];
+
+    let filter = {
+        'property': 'Status', 
+        'status': { 
+            'equals': 'Past Due' 
+        }
     };
 
-    return await queryActionItems(filter, 'assigned', debug);
+    const sort = [
+        {
+            'property': 'Due Date',
+            'direction': 'ascending'
+        }
+    ];
+
+    // Get the action items that are labeled as past due
+    const pastDue = await queryActionItems(filter, sort, 'past due status');
+    items.push(...pastDue);
+
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' });
+    filter = {
+        'and': [
+            {
+                'property': 'Due Date',
+                'date': { 'before': today }
+            },
+            {
+                'or': [
+                    { 'property': 'Status', 'status': { 'equals': 'Assigned' } },
+                    { 'property': 'Status', 'status': { 'equals': 'Delegated' } },
+                    { 'property': 'Status', 'status': { 'equals': 'In Progress' } }
+                ]
+            }
+        ]
+    };
+
+    const pastDueWrongStatus =  await queryActionItems(filter, sort, 'assigned, delegated, or in progress status and past due date');
+    
+    // update status to be past due
+    if(pastDueWrongStatus.length > 0) {     
+        const updated = await updatePastDueStatus(pastDueWrongStatus);
+        items.push(...updated);
+    }
+
+    return items;
 }
 
-async function aggregateActionItemsByInitiative(actionItems, debug) {
-    let initiatives = new Map(); // Map<string, PastDueItem[]> - stores action items grouped by initiative ID
+async function queryAssigned() {
+    const filter = { 'property': 'Status', 'status': { 'equals': 'Assigned'} };
 
-    for (let item of actionItems) {
+    return await queryActionItems(filter, 'assigned');
+}
+
+async function aggregateByInitiative(pastDue, assigned) {
+    let initiatives = new Map(); // Map<string, [pastDueItems[], assignedItems[]]>`
+    
+    for (let item of pastDue) {
         let initiativePageIds = item.properties['Assigned Initiative(s)'].relation.map( initiativePage => initiativePage.id);
         let itemTitle = item.properties['Action Item'].title.map(itemTitle => itemTitle.plain_text).join('');
         let status = item.properties['Status'].status.name;
@@ -104,15 +159,12 @@ async function aggregateActionItemsByInitiative(actionItems, debug) {
         }
     }
 
-    if (debug) {
-        console.log('\ninitiatives (Map<string, PastDueItem[]>:');
-        console.dir(initiatives, { depth: null, colors: true });
-    }
+    console.dir(initiatives, { depth: null, colors: true });
 
     return initiatives;
 }
 
-async function enrichInitiatives(initiativesMap, debug) {
+async function enrichInitiatives(initiativesMap) {
     const enriched = []
 
     for(const [initiativeId, items] of initiativesMap.entries()) {
@@ -140,17 +192,12 @@ async function enrichInitiatives(initiativesMap, debug) {
         });
     }
 
-    if (debug) {
-        console.log('\n enriched: ');
-        console.dir(enriched, { depth: null, colors: true });
-    }
-
     return enriched;
 }
 
 export {
     queryPastDue,
     queryAssigned,
-    aggregateActionItemsByInitiative,
+    aggregateByInitiative,
     enrichInitiatives
 };
