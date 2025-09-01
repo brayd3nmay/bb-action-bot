@@ -6,7 +6,7 @@ const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY
 
 async function addEmail (actionItemPageId, initiativeId, recipientId, recipientEmail, originalDueDate, currentDueDate, category, providerName, providerMessageId) {
     try {
-        const data = await supabase
+        const { data, error } = await supabase
             .from('sent_emails')
             .insert([
                 {
@@ -22,7 +22,12 @@ async function addEmail (actionItemPageId, initiativeId, recipientId, recipientE
                 }
             ])
             .select()
+
+        if (error) throw error;
+
+        return data;
     } catch (error) {
-        console.error(`Failed to add email for ${} to ${}`);
+        console.error(`Failed to add email for ${actionItemPageId}, ${initiativeId}, ${recipientId}`);
+        throw error;
     }
 }
