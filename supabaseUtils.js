@@ -31,3 +31,26 @@ async function addEmail (actionItemPageId, initiativeId, recipientId, recipientE
         throw error;
     }
 }
+
+async function querySentEmails(actionItemPageId, initiativeId, recipientId) {
+    try {
+        const { data, error } = await supabase
+            .from('sent_emails')
+            .select('action_item_page_id, initiative_id, recipient_id, original_due_date, current_due_date, run_date, email_status, category')
+            .eq('action_item_page_id', actionItemPageId)
+            .eq('initiative_id', initiativeId)
+            .eq('recipient_id', recipientId)
+
+        if (error) throw error;
+
+        return data;
+    } catch (error) {
+        console.error(`Failed to query sent emails for ${actionItemPageId}, ${initiativeId}, ${recipientId}`);
+        throw error;
+    }
+}
+
+export {
+    addEmail,
+    querySentEmails
+};
