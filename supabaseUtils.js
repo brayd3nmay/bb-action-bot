@@ -3,8 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
-
-async function addEmail (actionItemPageId, initiativeId, recipientId, recipientEmail, originalDueDate, currentDueDate, category, providerName, providerMessageId) {
+async function addEmail (actionItemPageId, initiativeId, recipientId, recipientEmail, originalDueDate, currentDueDate, category, providerName, providerMessageId, emailStatus) {
     try {
         const { data, error } = await supabase
             .from('sent_emails')
@@ -19,6 +18,7 @@ async function addEmail (actionItemPageId, initiativeId, recipientId, recipientE
                     category: category,
                     provider_name: providerName,
                     provider_message_id: providerMessageId,
+                    email_status: emailStatus,
                 }
             ])
             .select()
