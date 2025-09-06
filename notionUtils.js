@@ -49,8 +49,6 @@ async function queryActionItems(filter, sorts, description) {
 }
 
 async function updatePastDueStatus(items) {
-    let updatedItems = [];
-
     for (let item of items) {
         const pageId = item.id;
 
@@ -70,15 +68,11 @@ async function updatePastDueStatus(items) {
 
             console.log(`Updated page ${pageId}`);
 
-            updatedItems.push(response);
-
         } catch(error) {
             console.error(`\nERROR with status ${error.status} updating page ${pageId}\n\n${error.message}`, error);
             throw new Error(`Failed to update ${pageId} ${error.message}`);
         }
     }
-
-    return updatedItems;
 }
 
 async function queryPastDue() {
