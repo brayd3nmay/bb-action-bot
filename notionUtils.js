@@ -2,7 +2,7 @@ import 'dotenv/config';
 import { Client } from '@notionhq/client';
 const notion = new Client({ auth: process.env.NOTION_KEY });
 
-async function queryActionItems(filter, sort, description) {
+async function queryActionItems(filter, sorts, description) {
     let actionItems = [];
     let hasMore = true;
     let startCursor = undefined;
@@ -15,8 +15,12 @@ async function queryActionItems(filter, sort, description) {
                 database_id: databaseId,
                 start_cursor: startCursor,
                 filter: filter,
-                sorts: sort 
+                sorts: sorts
             });
+
+            if (!databaseId) {
+                throw new Error('NOTION_DATABASE_ID is missing');
+            }
             
             actionItems.push(...response.results);
             console.log(`Fetched batch of ${response.results.length} ${description} action items.\nTotal so far: ${actionItems.length}`);
