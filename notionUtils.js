@@ -10,6 +10,10 @@ async function queryActionItems(filter, sorts, description) {
     try {
         const databaseId = process.env.NOTION_DATABASE_ID;
 
+        if (!databaseId) {
+            throw new Error('NOTION_DATABASE_ID is missing');
+        }
+
         while(hasMore) {
             const response = await notion.databases.query({
                 database_id: databaseId,
