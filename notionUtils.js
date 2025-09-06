@@ -21,10 +21,6 @@ async function queryActionItems(filter, sorts, description) {
                 filter: filter,
                 sorts: sorts
             });
-
-            if (!databaseId) {
-                throw new Error('NOTION_DATABASE_ID is missing');
-            }
             
             actionItems.push(...response.results);
             console.log(`Fetched batch of ${response.results.length} ${description} action items.\nTotal so far: ${actionItems.length}`);
