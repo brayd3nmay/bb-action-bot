@@ -8,18 +8,26 @@ async function sendEmails(initiatives) {
         const initiativeName = initiative.initiative;
         const items = initiative.items;
 
+        // Combine past due and assigned items
+        const allItems = [...items.pastDue, ...items.assigned];
+
+        // Skip if no items to send
+        if (allItems.length === 0) {
+            continue;
+        }
+
         for (let lead of initiative.leads) {
             const leadFullName = lead.name;
             const leadEmail = lead.email;
 
-            const textBody = createText(initiativeName, leadFullName, items);
-            const htmlBody = createHtml(initiativeName, leadFullName, items);
+            const textBody = createText(initiativeName, leadFullName, allItems);
+            const htmlBody = createHtml(initiativeName, leadFullName, allItems);
             
             try {
                 const info = await resend.emails.send({
-                    from: 'Business Builders Bot <bot@bbosu.org>',
-                    to: 'may.822@osu.edu',//leadEmail,
-                    cc: ['may.822@osu.edu', 'perera.82@osu.edu'],
+                    from: 'Business Builders Bot <onboarding@resend.dev>',
+                    to: 'kuldeep.debnath@gmail.com', // Testing mode - replace with leadEmail after domain verification
+                    // cc: ['may.822@osu.edu', 'perera.82@osu.edu'], // Disabled for testing
                     subject: 'Late Action Items',
                     text: textBody,
                     html: htmlBody,
@@ -215,7 +223,7 @@ function createHtml(initiative, fullName, pastDueItems) {
                             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 32px;">
                                 <tr>
                                     <td align="center">
-                                        <img src="https://github.com/brayd3nmay/notion-email/blob/b89ff878cb0b085503501c90125f95b5b345cca7/assets/business-builders-logo.png?raw=true" alt="Business Builders Logo" style="width: 100%; height: auto; display: block; border-radius: 8px;">
+                                        <img src="https://www.bbosu.org/white-logo.png" alt="Business Builders Logo" style="max-width: 200px; height: auto; display: block;">
                                     </td>
                                 </tr>
                             </table>
