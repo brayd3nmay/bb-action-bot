@@ -130,12 +130,99 @@ async function queryAssigned() {
     return await queryActionItems(filter, sort, 'assigned');
 }
 
-async function aggregateByInitiative(pastDue, assigned) {
-    let initiatives = new Map(); // Map<string, [pastDueItems[], assignedItems[]]>`
+async function queryDueTomorrow() {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowStr = tomorrow.toLocaleDateString('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' });
+
+    const filter = {
+        'and': [
+            {
+                'property': 'Due Date',
+                'date': { 'equals': tomorrowStr }
+            },
+            {
+                'or': [
+                    { 'property': 'Status', 'status': { 'equals': 'Assigned' } },
+                    { 'property': 'Status', 'status': { 'equals': 'Delegated' } },
+                    { 'property': 'Status', 'status': { 'equals': 'In Progress' } }
+                ]
+            }
+        ]
+    };
+
+    const sort = [
+        {
+            'property': 'Due Date',
+            'direction': 'ascending'
+        }
+    ];
+
+    return await queryActionItems(filter, sort, 'due tomorrow');
+}
+
+async function queryTwoDaysPastDue() {
+    const twoDaysAgo = new Date();
+    twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+    const twoDaysAgoStr = twoDaysAgo.toLocaleDateString('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' });
+
+    const filter = {
+        'and': [
+            {
+                'property': 'Due Date',
+                'date': { 'equals': twoDaysAgoStr }
+            },
+            {
+                'property': 'Status',
+                'status': { 'equals': 'Past Due' }
+            }
+        ]
+    };
+
+    const sort = [
+        {
+            'property': 'Due Date',
+            'direction': 'ascending'
+        }
+    ];
+
+    return await queryActionItems(filter, sort, 'two days past due');
+}
+
+async function queryFourDaysPastDue() {
+    const fourDaysAgo = new Date();
+    fourDaysAgo.setDate(fourDaysAgo.getDate() - 4);
+    const fourDaysAgoStr = fourDaysAgo.toLocaleDateString('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' });
+
+    const filter = {
+        'and': [
+            {
+                'property': 'Due Date',
+                'date': { 'equals': fourDaysAgoStr }
+            },
+            {
+                'property': 'Status',
+                'status': { 'equals': 'Past Due' }
+            }
+        ]
+    };
+
+    const sort = [
+        {
+            'property': 'Due Date',
+            'direction': 'ascending'
+        }
+    ];
+
+    return await queryActionItems(filter, sort, 'four days past due');
+}
+
+async function aggregateByInitiative(items) {
+    let initiatives = new Map();
 
     const pushItem = (bucket, item) => {
         let pageId = item.id;
-        
+
         let relations = [];
         if(item.properties && item.properties['Assigned Initiative(s)']) {
             relations = item.properties['Assigned Initiative(s)'].relation.map( initiativePage => initiativePage.id);
@@ -143,7 +230,7 @@ async function aggregateByInitiative(pastDue, assigned) {
         if(relations.length === 0) {
             relations = ['UNASSIGNED'];
         }
-        
+
         let itemTitle = '';
         if(item.properties && item.properties['Action Item']){
             itemTitle = item.properties['Action Item'].title.map(itemTitle => itemTitle.plain_text).join('');
@@ -153,7 +240,6 @@ async function aggregateByInitiative(pastDue, assigned) {
         if(item.properties && item.properties['Status'] && item.properties['Status'].status.name) {
             status = item.properties['Status'].status.name;
         }
-
 
         let dueDate = 'None';
         if(item.properties && item.properties['Due Date'] && item.properties['Due Date'].date){
@@ -172,14 +258,23 @@ async function aggregateByInitiative(pastDue, assigned) {
 
         for (const id of relations) {
             if (!initiatives.has(id)) {
-                initiatives.set(id, { pastDue: [], assigned: []});
+                initiatives.set(id, {
+                    assigned: [],
+                    dueTomorrow: [],
+                    pastDue: [],
+                    twoDaysPastDue: [],
+                    fourDaysPastDue: []
+                });
             }
             initiatives.get(id)[bucket].push(newItem);
         }
     };
-    
-    for(let item of pastDue) pushItem('pastDue', item);
-    for(let item of assigned) pushItem('assigned', item);
+
+    for(let item of items.assigned) pushItem('assigned', item);
+    for(let item of items.dueTomorrow) pushItem('dueTomorrow', item);
+    for(let item of items.pastDue) pushItem('pastDue', item);
+    for(let item of items.twoDaysPastDue) pushItem('twoDaysPastDue', item);
+    for(let item of items.fourDaysPastDue) pushItem('fourDaysPastDue', item);
 
     return initiatives;
 }
@@ -241,6 +336,9 @@ async function retrieveInitiativeInfo(initiativesMap) {
 export {
     queryPastDue,
     queryAssigned,
+    queryDueTomorrow,
+    queryTwoDaysPastDue,
+    queryFourDaysPastDue,
     aggregateByInitiative,
     retrieveInitiativeInfo
 };
