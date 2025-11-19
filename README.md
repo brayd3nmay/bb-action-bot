@@ -75,6 +75,7 @@ Required environment variables:
 - `VP_EMAIL` - VP's email for escalation
 - `ADMIN_EMAIL_1` - First admin email (for 4+ days past due)
 - `ADMIN_EMAIL_2` - Second admin email (for 4+ days past due)
+- `CRON_SECRET` - Random secret key for securing the cron endpoint
 
 ### 3. Supabase Database Setup
 
@@ -117,18 +118,35 @@ Your Notion database should have the following properties:
 
 ## Usage
 
+### Deploy to Vercel (Recommended)
+
+This bot is configured to run automatically on Vercel using cron jobs.
+
+1. **Install Vercel CLI** (if not already installed):
+   ```bash
+   npm i -g vercel
+   ```
+
+2. **Deploy to Vercel**:
+   ```bash
+   vercel
+   ```
+
+3. **Add Environment Variables** in Vercel Dashboard:
+   - Go to your project settings
+   - Add all environment variables from `.env` (including `CRON_SECRET`)
+   - Generate a secure random string for `CRON_SECRET`
+
+4. **Cron Schedule**:
+   - The bot runs automatically every day at **9:00 AM EST** (14:00 UTC)
+   - Configured in `vercel.json`
+
+### Run Locally for Testing
+
 Run the bot manually:
 
 ```bash
 node main.js
-```
-
-### Schedule with Cron (Recommended)
-
-To run daily at 9 AM:
-
-```bash
-0 9 * * * cd /path/to/bb-action-bot && node main.js
 ```
 
 ## Email Templates
@@ -155,14 +173,17 @@ The bot uses responsive HTML email templates that work across all major email cl
 
 ```
 bb-action-bot/
-├── main.js              # Entry point and orchestration
+├── api/
+│   └── cron.js          # Vercel serverless function for cron job
+├── main.js              # Entry point for local testing
 ├── notionUtils.js       # Notion API queries and data aggregation
 ├── emailUtils.js        # Email generation and sending logic
 ├── supabaseUtils.js     # Supabase tracking functions
+├── vercel.json          # Vercel cron job configuration
 ├── package.json         # Dependencies
 ├── .env                 # Environment variables (not in git)
 ├── .env.example         # Template for environment variables
-└── README.md           # This file
+└── README.md            # This file
 ```
 
 ## Troubleshooting
