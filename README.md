@@ -1,4 +1,4 @@
-# Business Builders Action Items Bot
+# Builders Action Items Bot
 
 An automated email notification system for managing action items in Notion. This bot sends daily digest emails to team leads with intelligent escalation based on task urgency.
 
